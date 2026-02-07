@@ -6,3 +6,4 @@ google-genai
 ollama
 urllib3
 gunicorn
+whitenoise
