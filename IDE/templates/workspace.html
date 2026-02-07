@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratis IDE</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --panel-bg: #252526;
+            --accent-color: #0e639c;
+            --accent-hover: #1177bb;
+            --text-color: #d4d4d4;
+            --border-color: #333;
+            --success-color: #89ca78;
+            --error-color: #f48771;
+            --magic-color: #ce9178;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- Left Code Panel --- */
+        .code-panel {
+            flex: 7;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            min-width: 400px;
+        }
+
+        .editor-wrapper {
+            flex-grow: 2;
+            width: 100%;
+            position: relative;
+        }
+
+        #editor-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #terminal {
+            flex-grow: 1;
+            min-height: 180px;
+            max-height: 40%;
+            background-color: #181818;
+            border-top: 1px solid var(--border-color);
+            padding: 15px;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 0.9em;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* --- Right Mentor Panel --- */
+        .mentor-panel {
+            flex: 3;
+            background-color: var(--panel-bg);
+            display: flex;
+            flex-direction: column;
+            min-width: 300px;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        /* --- Global Header Styles --- */
+        .header {
+            background-color: #2d2d2d;
+            padding: 12px 20px;
+            color: #eeeeee;
+            font-weight: 600;
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.5px;
+        }
+
+        .header span {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* --- Avatar Area --- */
+        #avatar-container {
+            height: 150px;
+            width: 100%;
+            background: linear-gradient(180deg, #2a2a2b 0%, #252526 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #socratis-avatar {
+            width: 120px;
+            height: 120px;
+        }
+
+        /* --- Chat Area --- */
+        .chat-content {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        /* Chat Bubbles */
+        .chat-bubble {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chat-user {
+            background-color: #383838;
+            padding: 10px 15px;
+            border-radius: 8px 8px 0 8px;
+            margin-left: 20px;
+            text-align: right;
+            border: 1px solid #444;
+        }
+
+        .chat-bot {
+            background-color: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px 8px 8px 0;
+            margin-right: 20px;
+            border-left: 4px solid #4ec9b0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            border-radius: 4px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background-color: #444;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-ask {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            display: none;
+            width: 100%;
+            justify-content: center;
+            padding: 12px;
+            font-size: 1em;
+            margin-top: 20px;
+        }
+
+        .btn-ask:hover {
+            filter: brightness(1.2);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        /* --- Demo Button --- */
+        .btn-demo {
+            background-color: #444;
+            font-size: 0.75em;
+            padding: 4px 10px;
+            margin-right: 15px;
+        }
+
+        .btn-demo:hover {
+            background-color: #555;
+        }
+
+        /* --- Utils --- */
+        .output-error {
+            color: var(--error-color);
+        }
+
+        .output-log {
+            color: #cccccc;
+        }
+
+        .text-dim {
+            color: #888;
+            font-style: italic;
+        }
+
+        #pyodide-status {
+            font-size: 0.75em;
+            color: #888;
+            margin-right: 15px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- Gamification --- */
+        #progress-container {
+            padding: 15px 20px;
+            background: #252526;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        #progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background-color: #1e1e1e;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #333;
+            cursor: pointer;
+        }
+
+        #progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            /* XP Gold Color */
+            transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
+        #score-label {
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            color: #ffd700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Tooltip style for Breakdown */
+        #xp-tooltip {
+            position: absolute;
+            top: 45px;
+            left: 20px;
+            right: 20px;
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: #ccc;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #progress-container:hover #xp-tooltip {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- CODE PANEL -->
+        <div class="code-panel">
+            <div class="header">
+                <span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <line x1="10" y1="9" x2="8" y2="9"></line>
+                    </svg>
+                    main.py
+                </span>
+                <div style="display: flex; align-items: center;">
+                    <button class="btn btn-demo" onclick="loadDemo()">Load Logic Bug (Demo)</button>
+                    <span id="pyodide-status">Loading Engine...</span>
+                    <!-- Play Icon SVG -->
+                    <button id="run-btn" class="btn" onclick="runCode()" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        RUN
+                    </button>
+                </div>
+            </div>
+
+            <div id="editor-container"></div>
+
+            <div class="header" style="background-color: #252526; justify-content: flex-start; gap: 10px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="4 17 10 11 4 5"></polyline>
+                    <line x1="12" y1="19" x2="20" y2="19"></line>
+                </svg>
+                Terminal
+            </div>
+            <div id="terminal"></div>
+        </div>
+
+        <!-- MENTOR PANEL -->
+        <div class="mentor-panel">
+            <div class="header" style="background-color: #333;">
+                <span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ec9b0" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Socratis Mentor
+                </span>
+            </div>
+
+            <!-- Avatar Section -->
+            <div id="avatar-container">
+                <div id="socratis-avatar"></div>
+            </div>
+
+            <!-- Granular Mastery Progress -->
+            <div id="progress-container">
+                <span id="score-label">
+                    <span>Logic Mastery (Level <span id="lvl-val">1</span>)</span>
+                    <span id="score-val">0 XP</span>
+                </span>
+                <div id="progress-bar-bg">
+                    <div id="progress-bar-fill"></div>
+                </div>
+                <!-- Breakdown Tooltip -->
+                <div id="xp-tooltip">
+                    Breakdown:<br>
+                    <span id="xp-breakdown">Play to unlock metrics...</span>
+                </div>
+            </div>
+
+            <div class="chat-content" id="mentor-chat">
+                <div class="chat-bubble chat-bot">
+                    <p style="margin: 0 0 10px 0;"><strong>Welcome!</strong> I am Socratis.</p>
+                    <p style="margin: 0; color: #bbb;">I track your logic growth. Run code to gain XP.</p>
+                </div>
+
+                <div id="ask-container">
+                    <button id="ask-btn" class="btn btn-ask" onclick="askSocratis()">
+                        ASK SOCRATIS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/loader.min.js"></script>
+    <!-- Pyodide Loader -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <!-- Lottie Web -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+
+    <script>
+        // Global variables
+        var editor;
+        var pyodide;
+        var lastError = "";
+        var currentScore = 0;
+        var decorations = [];
+        var avatarAnim;
+
+        // Initialize Monaco
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: [
+                    'def main():',
+                    '    print("Hello Human!")',
+                    '    for i in range(3):',
+                    '        print("Counting:", i)',
+                    '',
+                    'if __name__ == "__main__":',
+                    '    main()'
+                ].join('\n'),
+                language: 'python',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', Consolas, monospace",
+                scrollBeyondLastLine: false,
+                renderLineHighlight: "all",
+            });
+            checkReady();
+        });
+
+        function checkReady() {
+            if (editor && pyodide) {
+                document.getElementById('run-btn').disabled = false;
+                document.getElementById('pyodide-status').innerText = "Ready";
+                document.getElementById('pyodide-status').style.color = "var(--success-color)";
+            }
+        }
+
+        // Initialize Lottie Avatar
+        function initAvatar() {
+            try {
+                avatarAnim = lottie.loadAnimation({
+                    container: document.getElementById('socratis-avatar'),
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    path: 'https://assets5.lottiefiles.com/packages/lf20_jR229r.json'
+                });
+            } catch (e) { console.warn("Avatar failed load", e); }
+        }
+        initAvatar();
+
+        function setAvatarState(state) {
+            if (!avatarAnim) return;
+            // In a real app we would swap the 'path' using load() again or use segments
+            // For this demo, we can just speed up for thinking or change context
+            // Simulating state change with speed/color or re-load
+
+            // Mock state changes with re-loads if we had multiple URLs
+            // For now:
+            // Idle: speed 1
+            // Thinking: speed 2.5
+            // Celebration: speed 1 (but we ideally swap anim)
+
+            if (state === 'thinking') {
+                avatarAnim.setSpeed(2);
+            } else if (state === 'celebration') {
+                avatarAnim.setSpeed(0.5); // Slow-mo glory
+                // If we had a thumbs up JSON, we'd load it here
+            } else {
+                avatarAnim.setSpeed(1);
+            }
+        }
+
+        // Initialize Pyodide
+        async function loadEngine() {
+            const status = document.getElementById('pyodide-status');
+            try {
+                if (typeof loadPyodide === 'undefined') {
+                    status.innerText = "Error: Offline?";
+                    status.style.color = "var(--error-color)";
+                    return;
+                }
+
+                pyodide = await loadPyodide({
+                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
+                });
+
+                checkReady();
+            } catch (err) {
+                console.error("Failed to load Pyodide:", err);
+                status.innerText = "Load Failed";
+                status.style.color = "var(--error-color)";
+            }
+        }
+        loadEngine();
+
+        // -- UTILS --
+        function clearTerminal() {
+            document.getElementById('terminal').innerHTML = "";
+        }
+
+        function addToTerminal(text, isError = false) {
+            const terminal = document.getElementById('terminal');
+            const span = document.createElement('span');
+            span.className = isError ? 'output-error' : 'output-log';
+            span.innerText = text;
+            terminal.appendChild(span);
+        }
+
+        function clearDecorations() {
+            decorations = editor.deltaDecorations(decorations, []);
+        }
+
+        // -- DEMO MODE --
+        function loadDemo() {
+            if (!editor) return;
+            const buggyCode = [
+                'def count_down(n):',
+                '    while n > 0:',
+                '        print(n)',
+                '        # Ooops, forgot to decrement!',
+                '        # n = n - 1',
+                '',
+                'count_down(5)'
+            ].join('\n');
+
+            editor.setValue(buggyCode);
+            clearTerminal();
+            addToTerminal("Demo Loaded: Infinite Loop Logic.\nClick RUN.");
+        }
+
+        // -- RUN LOGIC --
+        async function runCode() {
+            console.log("Run clicked");
+            if (!pyodide || !editor) {
+                console.error("Engine or Editor unexpected not ready");
+                return;
+            }
+
+            const runBtn = document.getElementById('run-btn');
+            runBtn.disabled = true;
+            const originalBtnContent = runBtn.innerHTML;
+            runBtn.innerHTML = 'Executing...';
+
+            clearTerminal();
+            clearDecorations();
+            const userCode = editor.getValue();
+
+            setAvatarState('thinking'); // Avatar Thinking
+
+            document.getElementById('ask-btn').style.display = 'none';
+            lastError = "";
+
+            try {
+                pyodide.setStdout({
+                    batched: (text) => {
+                        addToTerminal(text + "\n");
+                    }
+                });
+
+                if (pyodide.setStderr) {
+                    pyodide.setStderr({
+                        batched: (text) => {
+                            addToTerminal(text + "\n", true);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn("Stream setup warning:", e);
+            }
+
+            try {
+                await pyodide.runPythonAsync(userCode);
+                // Success!
+                setAvatarState('celebration');
+                recordSuccess(userCode);
+
+            } catch (err) {
+                console.error("Execution Error:", err);
+                lastError = err.toString();
+                addToTerminal("\n" + lastError + "\n", true);
+
+                setAvatarState('idle'); // Back to idle on error
+
+                // Show "Ask Socratis"
+                const askBtn = document.getElementById('ask-btn');
+                askBtn.style.display = 'flex'; // flex for valid css
+
+                // Scroll to button
+                const chatM = document.getElementById('mentor-chat');
+                chatM.scrollTop = chatM.scrollHeight;
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = originalBtnContent;
+
+                setTimeout(() => {
+                    if (typeof avatarAnim !== 'undefined' && !lastError) setAvatarState('idle');
+                }, 1500);
+            }
+        }
+
+        // -- ASK SOCRATIS --
+        async function askSocratis() {
+            const mentorChat = document.getElementById('mentor-chat');
+            const askBtn = document.getElementById('ask-btn');
+            const userCode = editor.getValue();
+            const errorMsg = lastError || "No runtime error, but logic seems wrong.";
+
+            setAvatarState('thinking');
+
+            // 1. User Bubble
+            const userDiv = document.createElement('div');
+            userDiv.className = 'chat-bubble chat-user';
+            userDiv.innerText = "Student: " + errorMsg.split('\n')[0];
+            mentorChat.insertBefore(userDiv, document.getElementById('ask-container'));
+
+            // 2. Loading Bubble
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'chat-bubble chat-bot text-dim';
+            loadingDiv.innerText = "Socratis is analyzing logic structure...";
+            loadingDiv.id = "loading-bubble";
+            mentorChat.insertBefore(loadingDiv, document.getElementById('ask-container'));
+
+            askBtn.style.display = 'none';
+            mentorChat.scrollTop = mentorChat.scrollHeight;
+
+            try {
+                const response = await fetch('/api/hint/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: userCode, error: errorMsg })
+                });
+
+                const data = await response.json();
+                document.getElementById('loading-bubble').remove();
+                setAvatarState('idle');
+
+                // 3. Bot Response Bubble
+                const botDiv = document.createElement('div');
+                botDiv.className = 'chat-bubble chat-bot';
+                botDiv.innerHTML = `<strong style="color: #4ec9b0">Socratis:</strong> ${data.hint}`;
+                mentorChat.insertBefore(botDiv, document.getElementById('ask-container'));
+
+                // 4. Highlight Line (Mock Logic for demo)
+                let lineNo = 1;
+                const match = errorMsg.match(/line (\d+)/);
+                if (match) {
+                    lineNo = parseInt(match[1]);
+                    highlightLine(lineNo);
+                }
+
+                mentorChat.scrollTop = mentorChat.scrollHeight;
+
+            } catch (err) {
+                console.error("API Error:", err);
+                if (document.getElementById('loading-bubble'))
+                    document.getElementById('loading-bubble').innerText = "System Failure.";
+            }
+        }
+
+        function highlightLine(lineNum) {
+            decorations = editor.deltaDecorations(decorations, [
+                {
+                    range: new monaco.Range(lineNum, 1, lineNum, 1),
+                    options: {
+                        isWholeLine: true,
+                        className: 'myContentClass',
+                        glyphMarginClassName: 'myGlyphMarginClass'
+                    }
+                }
+            ]);
+            // Add custom style for highlight if not exists
+            if (!document.getElementById('highlight-style')) {
+                const style = document.createElement('style');
+                style.id = 'highlight-style';
+                style.innerHTML = `
+                    .myContentClass { background: rgba(244, 135, 113, 0.2); }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        async function recordSuccess(successfulCode) {
+            try {
+                const response = await fetch('/api/success/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: successfulCode }) // Sending CODE now, not just tags
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    updateScoreDisplay(data.new_score, data.breakdown, data.gained);
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function updateScoreDisplay(newScore, breakdown, gained) {
+            // Update Number
+            if (newScore !== undefined) currentScore = newScore;
+            document.getElementById('score-val').innerText = `${currentScore} XP`;
+
+            // Update Bar
+            // Level Cap calc: Level = Score / 500 roughly
+            const level = Math.floor(currentScore / 500) + 1;
+            document.getElementById('lvl-val').innerText = level;
+
+            const progressInLevel = currentScore % 500;
+            const percentage = (progressInLevel / 500) * 100;
+            document.getElementById('progress-bar-fill').style.width = percentage + "%";
+
+            // Update Breakdown Tooltip
+            if (breakdown) {
+                let html = "<strong>Mastery Breakdown:</strong><br>";
+                breakdown.forEach(item => {
+                    html += `• ${item.concept}: Lvl ${Math.floor(item.score / 100)} (${item.score} XP)<br>`;
+                });
+                document.getElementById('xp-breakdown').innerHTML = html;
+            }
+
+            if (gained) {
+                // Show sticky notification log if we had one, for now console
+                console.log("Gained XP:", gained);
+            }
+        }
+
+        // Initial Fetch
+        fetch('/api/progress/').then(r => r.json()).then(data => {
+            updateScoreDisplay(data.total_score, data.mastery);
+        });
+
+    </script>
+</body>
+
+</html>

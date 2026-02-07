@@ -1,0 +1,292 @@
+:root {
+    --bg-color: #1e1e1e;
+    --panel-bg: #252526;
+    --accent-color: #0e639c;
+    --accent-hover: #1177bb;
+    --text-color: #d4d4d4;
+    --border-color: #333;
+    --success-color: #89ca78;
+    --error-color: #f48771;
+    --magic-color: #ce9178;
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* --- Left Code Panel --- */
+.code-panel {
+    flex: 7;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    min-width: 400px;
+}
+
+.editor-wrapper {
+    flex-grow: 2;
+    width: 100%;
+    position: relative;
+}
+
+#editor-container {
+    width: 100%;
+    height: 100%;
+}
+
+#terminal {
+    flex-grow: 1;
+    min-height: 180px;
+    max-height: 40%;
+    background-color: #181818;
+    border-top: 1px solid var(--border-color);
+    padding: 15px;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 0.9em;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Right Mentor Panel --- */
+.mentor-panel {
+    flex: 3;
+    background-color: var(--panel-bg);
+    display: flex;
+    flex-direction: column;
+    min-width: 300px;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+/* --- Global Header Styles --- */
+.header {
+    background-color: #2d2d2d;
+    padding: 12px 20px;
+    color: #eeeeee;
+    font-weight: 600;
+    font-size: 0.9em;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.5px;
+}
+
+.header span {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* --- Avatar Area --- */
+#avatar-container {
+    height: 150px;
+    width: 100%;
+    background: linear-gradient(180deg, #2a2a2b 0%, #252526 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#socratis-avatar {
+    width: 120px;
+    height: 120px;
+}
+
+/* --- Chat Area --- */
+.chat-content {
+    padding: 20px;
+    flex-grow: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+/* Chat Bubbles */
+.chat-bubble {
+    margin-bottom: 15px;
+    animation: fadeIn 0.3s ease;
+}
+
+.chat-user {
+    background-color: #383838;
+    padding: 10px 15px;
+    border-radius: 8px 8px 0 8px;
+    margin-left: 20px;
+    text-align: right;
+    border: 1px solid #444;
+}
+
+.chat-bot {
+    background-color: #2d2d2d;
+    padding: 15px;
+    border-radius: 8px 8px 8px 0;
+    margin-right: 20px;
+    border-left: 4px solid #4ec9b0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Buttons --- */
+.btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 0.85em;
+    border-radius: 4px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.btn:disabled {
+    background-color: #444;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-ask {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    display: none;
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 1em;
+    margin-top: 20px;
+}
+
+.btn-ask:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+/* --- Demo Button --- */
+.btn-demo {
+    background-color: #444;
+    font-size: 0.75em;
+    padding: 4px 10px;
+    margin-right: 15px;
+}
+
+.btn-demo:hover {
+    background-color: #555;
+}
+
+/* --- Utils --- */
+.output-error {
+    color: var(--error-color);
+}
+
+.output-log {
+    color: #cccccc;
+}
+
+.text-dim {
+    color: #888;
+    font-style: italic;
+}
+
+#pyodide-status {
+    font-size: 0.75em;
+    color: #888;
+    margin-right: 15px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* --- Gamification --- */
+#progress-container {
+    padding: 15px 20px;
+    background: #252526;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+#progress-bar-bg {
+    width: 100%;
+    height: 10px;
+    background-color: #1e1e1e;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid #333;
+    cursor: pointer;
+}
+
+#progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffd700, #ff8c00);
+    /* XP Gold Color */
+    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+#score-label {
+    font-size: 0.85em;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    color: #ffd700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Tooltip style for Breakdown */
+#xp-tooltip {
+    position: absolute;
+    top: 45px;
+    left: 20px;
+    right: 20px;
+    background-color: #1e1e1e;
+    border: 1px solid #444;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    color: #ccc;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+#progress-container:hover #xp-tooltip {
+    opacity: 1;
+}
+
+.myContentClass { background: rgba(244, 135, 113, 0.2); }
