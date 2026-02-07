@@ -244,6 +244,39 @@
             margin-right: 15px;
             font-family: 'JetBrains Mono', monospace;
         }
+
+        /* Score Display Styles */
+        #score-display {
+            position: relative;
+        }
+
+        .score-popup {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            color: #89ca78;
+            font-weight: bold;
+            font-size: 1.2em;
+            animation: scoreFloat 1s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(137, 202, 120, 0.5);
+        }
+
+        @keyframes scoreFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-10px) scale(1.2);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-20px) scale(1);
+            }
+        }
     </style>
 </head>
 
@@ -298,6 +331,14 @@
                     </svg>
                     Socratix Mentor
                 </span>
+                <!-- Score Display -->
+                <div id="score-display" style="display: flex; align-items: center; gap: 8px; position: relative;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffd700" stroke="none">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <span id="score-value" style="color: #ffd700; font-weight: 600; font-size: 1.1em;">0</span>
+                </div>
             </div>
 
             <!-- Avatar Section -->
@@ -338,6 +379,11 @@
         var decorations = [];
         var avatarAnim;
 
+        // Score tracking variables
+        var sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        var currentScore = 0;
+        var hadErrorBeforeRun = false;
+
         // Initialize Monaco
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' } });
         require(['vs/editor/editor.main'], function () {
@@ -361,10 +407,35 @@
                 renderLineHighlight: "all",
             });
             checkReady();
+            loadScore(); // Load score on editor ready
         });
 
         function checkReady() {
             // Worker readiness is handled via onmessage 'ready'
+        }
+
+        // Load current score from server
+        function loadScore() {
+            fetch(`/api/score/?session_id=${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    currentScore = data.score;
+                    document.getElementById('score-value').innerText = currentScore;
+                })
+                .catch(err => console.error('Error loading score:', err));
+        }
+
+        // Show score increase popup animation
+        function showScorePopup(points) {
+            const scoreDisplay = document.getElementById('score-display');
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.innerText = `+${points}`;
+            scoreDisplay.appendChild(popup);
+
+            setTimeout(() => {
+                popup.remove();
+            }, 1000);
         }
 
         // Initialize Avatar Paths
@@ -425,6 +496,28 @@
                         botDiv.innerHTML = `<strong style="color: var(--success-color)">Socratis:</strong> Brilliant! You fixed it!`;
                         mentorChat.insertBefore(botDiv, document.getElementById('ask-container'));
                         mentorChat.scrollTop = mentorChat.scrollHeight;
+
+                        // NEW: Record success and update score
+                        if (hadErrorBeforeRun) {
+                            fetch('/api/score/update/', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ session_id: sessionId })
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        // Update score display
+                                        currentScore = data.new_score;
+                                        document.getElementById('score-value').innerText = currentScore;
+
+                                        // Show +10 popup
+                                        showScorePopup(data.score_gained);
+                                    }
+                                })
+                                .catch(err => console.error('Error updating score:', err));
+                        }
+
                         wasBroken = false;
                     }
                     lastError = "";
@@ -521,6 +614,8 @@
             setAvatarState('thinking');
             document.getElementById('ask-btn').style.display = 'none';
 
+            // Track if there was an error before this run
+            hadErrorBeforeRun = !!lastError;
             wasBroken = !!lastError;
             lastError = "";
 
@@ -574,7 +669,11 @@
                 const response = await fetch('/api/hint/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: userCode, error: errorMsg })
+                    body: JSON.stringify({
+                        code: userCode,
+                        error: errorMsg,
+                        session_id: sessionId  // Include session ID
+                    })
                 });
 
                 const data = await response.json();

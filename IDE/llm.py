@@ -23,14 +23,24 @@ if LLM_PROVIDER == 'gemini':
         logger.warning("google-genai library not installed.")
 
 # Initialize Groq if needed
+print(f"DEBUG: LLM_PROVIDER = {LLM_PROVIDER}")
 if LLM_PROVIDER == 'groq':
     try:
         from groq import Groq
         api_key_groq = getattr(settings, 'GROQ_API_KEY', None)
+        print(f"DEBUG: settings.GROQ_API_KEY = {str(api_key_groq)[:5]}...")
+        
         if api_key_groq:
             client_groq = Groq(api_key=api_key_groq)
+            print("DEBUG: Groq API Client initialized successfully")
+        else:
+            print("DEBUG: Groq API Key is MISSING or EMPTY in settings")
+            
     except ImportError:
         logger.warning("groq library not installed.")
+        print("DEBUG: groq library ImportError")
+    except Exception as e:
+        print(f"DEBUG: Error initializing Groq: {e}")
 
 SYSTEM_PROMPT = """
 You are Socratis, a wise and patient coding mentor for beginners.
