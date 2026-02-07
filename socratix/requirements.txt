@@ -7,3 +7,5 @@ ollama
 urllib3
 gunicorn
 whitenoise
+dj-database-url
+psycopg-binary
