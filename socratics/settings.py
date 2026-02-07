@@ -123,4 +123,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 
-GEMINI_API_KEY = env("GEMINI_API_KEY")
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+LLM_PROVIDER = env("LLM_PROVIDER", default="gemini")
+OLLAMA_MODEL = env("OLLAMA_MODEL", default="llama3")
+OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://localhost:11434")
