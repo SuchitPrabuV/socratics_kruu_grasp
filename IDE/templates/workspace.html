@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socratis IDE</title>
+    <title>Socratix IDE</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -243,8 +244,6 @@
             margin-right: 15px;
             font-family: 'JetBrains Mono', monospace;
         }
-
-
     </style>
 </head>
 
@@ -264,7 +263,7 @@
                     main.py
                 </span>
                 <div style="display: flex; align-items: center;">
-                    <button class="btn btn-demo" onclick="loadDemo()">Load Logic Bug (Demo)</button>
+                    <!-- <button class="btn btn-demo" onclick="loadDemo()">Load Logic Bug (Demo)</button> -->
                     <span id="pyodide-status">Loading Engine...</span>
                     <!-- Play Icon SVG -->
                     <button id="run-btn" class="btn" onclick="runCode()" disabled>
@@ -297,26 +296,27 @@
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    Socratis Mentor
+                    Socratix Mentor
                 </span>
             </div>
 
             <!-- Avatar Section -->
             <div id="avatar-container">
-                <div id="socratis-avatar"></div>
+                <img id="socratis-avatar" src="{% static 'IDE/images/avatar_idle.svg' %}" alt="Socratis Avatar"
+                    style="width: 140px; height: 140px; transition: transform 0.3s ease;">
             </div>
 
 
 
             <div class="chat-content" id="mentor-chat">
                 <div class="chat-bubble chat-bot">
-                    <p style="margin: 0 0 10px 0;"><strong>Welcome!</strong> I am Socratis.</p>
-                    <p style="margin: 0; color: #bbb;">I track your logic growth. Run code to gain XP.</p>
+                    <p style="margin: 0 0 10px 0;"><strong>Welcome!</strong> I am Socratix.</p>
+                    <p style="margin: 0; color: #bbb;">Ask me anything about your code!</p>
                 </div>
 
                 <div id="ask-container">
                     <button id="ask-btn" class="btn btn-ask" onclick="askSocratis()">
-                        ASK SOCRATIS
+                        ASK SOCRATIX
                     </button>
                 </div>
             </div>
@@ -325,10 +325,9 @@
 
     <!-- Monaco Editor Loader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/loader.min.js"></script>
-    <!-- Pyodide Loader -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
-    <!-- Lottie Web -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+
+
+
 
     <script>
         // Global variables
@@ -345,8 +344,8 @@
             editor = monaco.editor.create(document.getElementById('editor-container'), {
                 value: [
                     'def main():',
-                    '    print("Hello Human!")',
-                    '    for i in range(3):',
+                    '    print("Hello Everyone!")',
+                    '    for i in range(5):',
                     '        print("Counting:", i)',
                     '',
                     'if __name__ == "__main__":',
@@ -365,71 +364,90 @@
         });
 
         function checkReady() {
-            if (editor && pyodide) {
-                document.getElementById('run-btn').disabled = false;
-                document.getElementById('pyodide-status').innerText = "Ready";
-                document.getElementById('pyodide-status').style.color = "var(--success-color)";
-            }
+            // Worker readiness is handled via onmessage 'ready'
         }
 
-        // Initialize Lottie Avatar
-        function initAvatar() {
-            try {
-                avatarAnim = lottie.loadAnimation({
-                    container: document.getElementById('socratis-avatar'),
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    path: 'https://assets5.lottiefiles.com/packages/lf20_jR229r.json'
-                });
-            } catch (e) { console.warn("Avatar failed load", e); }
-        }
-        initAvatar();
+        // Initialize Avatar Paths
+        const avatars = {
+            idle: "{% static 'IDE/images/avatar_idle.svg' %}",
+            thinking: "{% static 'IDE/images/avatar_thinking.svg' %}",
+            success: "{% static 'IDE/images/avatar_success.svg' %}",
+            confused: "{% static 'IDE/images/avatar_confused.svg' %}",  // Syntax/General
+            dizzy: "{% static 'IDE/images/avatar_dizzy.svg' %}"        // Runtime/Crash
+        };
 
         function setAvatarState(state) {
-            if (!avatarAnim) return;
-            // In a real app we would swap the 'path' using load() again or use segments
-            // For this demo, we can just speed up for thinking or change context
-            // Simulating state change with speed/color or re-load
+            const img = document.getElementById('socratis-avatar');
+            if (!img) return;
 
-            // Mock state changes with re-loads if we had multiple URLs
-            // For now:
-            // Idle: speed 1
-            // Thinking: speed 2.5
-            // Celebration: speed 1 (but we ideally swap anim)
+            // Animation pop effect
+            img.style.transform = "scale(0.9)";
+            setTimeout(() => { img.style.transform = "scale(1)"; }, 150);
 
-            if (state === 'thinking') {
-                avatarAnim.setSpeed(2);
-            } else if (state === 'celebration') {
-                avatarAnim.setSpeed(0.5); // Slow-mo glory
-                // If we had a thumbs up JSON, we'd load it here
+            if (avatars[state]) {
+                img.src = avatars[state];
             } else {
-                avatarAnim.setSpeed(1);
+                img.src = avatars.idle;
             }
         }
 
-        // Initialize Pyodide
-        async function loadEngine() {
-            const status = document.getElementById('pyodide-status');
-            try {
-                if (typeof loadPyodide === 'undefined') {
-                    status.innerText = "Error: Offline?";
-                    status.style.color = "var(--error-color)";
-                    return;
+        // Initialize Pyodide Worker
+        var pyodideWorker;
+        var executionTimeout;
+
+        function initWorker() {
+            if (pyodideWorker) pyodideWorker.terminate();
+
+            pyodideWorker = new Worker("{% static 'IDE/js/worker.js' %}");
+
+            pyodideWorker.onmessage = function (event) {
+                const { type, content } = event.data;
+
+                if (type === 'ready') {
+                    document.getElementById('run-btn').disabled = false;
+                    const status = document.getElementById('pyodide-status');
+                    status.innerText = "Ready";
+                    status.style.color = "var(--success-color)";
+                } else if (type === 'stdout') {
+                    addToTerminal(content + "\n");
+                } else if (type === 'stderr') {
+                    addToTerminal(content + "\n", true);
+                } else if (type === 'success') {
+                    cleanupExecution();
+                    setAvatarState('success');
+
+                    if (wasBroken) {
+                        // Success Nudge Logic
+                        const mentorChat = document.getElementById('mentor-chat');
+                        const botDiv = document.createElement('div');
+                        botDiv.className = 'chat-bubble chat-bot';
+                        botDiv.style.borderLeftColor = 'var(--success-color)';
+                        botDiv.innerHTML = `<strong style="color: var(--success-color)">Socratis:</strong> Brilliant! You fixed it!`;
+                        mentorChat.insertBefore(botDiv, document.getElementById('ask-container'));
+                        mentorChat.scrollTop = mentorChat.scrollHeight;
+                        wasBroken = false;
+                    }
+                    lastError = "";
+                } else if (type === 'error') {
+                    cleanupExecution();
+                    console.error("Worker Error:", content);
+                    lastError = content;
+                    addToTerminal("\n" + lastError + "\n", true);
+
+                    if (lastError.includes("SyntaxError") || lastError.includes("IndentationError")) {
+                        setAvatarState('confused');
+                    } else {
+                        setAvatarState('dizzy');
+                    }
+
+                    document.getElementById('ask-btn').style.display = 'flex';
+                    const chatM = document.getElementById('mentor-chat');
+                    chatM.scrollTop = chatM.scrollHeight;
                 }
-
-                pyodide = await loadPyodide({
-                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
-                });
-
-                checkReady();
-            } catch (err) {
-                console.error("Failed to load Pyodide:", err);
-                status.innerText = "Load Failed";
-                status.style.color = "var(--error-color)";
-            }
+            };
         }
-        loadEngine();
+
+        initWorker();
 
         // -- UTILS --
         function clearTerminal() {
@@ -466,74 +484,65 @@
             addToTerminal("Demo Loaded: Infinite Loop Logic.\nClick RUN.");
         }
 
+        var wasBroken = false;
+
+        function cleanupExecution() {
+            const runBtn = document.getElementById('run-btn');
+            runBtn.disabled = false;
+            runBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                RUN`;
+
+            if (executionTimeout) clearTimeout(executionTimeout);
+
+            setTimeout(() => {
+                if (!lastError) setAvatarState('idle');
+            }, 3000);
+        }
+
         // -- RUN LOGIC --
         async function runCode() {
             console.log("Run clicked");
-            if (!pyodide || !editor) {
-                console.error("Engine or Editor unexpected not ready");
+            if (!pyodideWorker) {
+                console.error("Worker not ready");
                 return;
             }
 
             const runBtn = document.getElementById('run-btn');
             runBtn.disabled = true;
-            const originalBtnContent = runBtn.innerHTML;
             runBtn.innerHTML = 'Executing...';
 
             clearTerminal();
             clearDecorations();
             const userCode = editor.getValue();
 
-            setAvatarState('thinking'); // Avatar Thinking
-
+            setAvatarState('thinking');
             document.getElementById('ask-btn').style.display = 'none';
+
+            wasBroken = !!lastError;
             lastError = "";
 
-            try {
-                pyodide.setStdout({
-                    batched: (text) => {
-                        addToTerminal(text + "\n");
-                    }
-                });
+            // Start Execution
+            pyodideWorker.postMessage({ code: userCode });
 
-                if (pyodide.setStderr) {
-                    pyodide.setStderr({
-                        batched: (text) => {
-                            addToTerminal(text + "\n", true);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.warn("Stream setup warning:", e);
-            }
+            // Set 5s Timeout (Watchdog)
+            executionTimeout = setTimeout(() => {
+                console.warn("Execution timed out!");
+                pyodideWorker.terminate(); // Kill the frozen worker
 
-            try {
-                await pyodide.runPythonAsync(userCode);
-                // Success!
-                setAvatarState('celebration');
+                addToTerminal("\n\n[Timeout] Code took too long (>5s). Infinite loop detected?\n", true);
+                lastError = "TimeoutError: Infinite Loop Detected";
 
+                setAvatarState('dizzy');
+                document.getElementById('ask-btn').style.display = 'flex';
 
-            } catch (err) {
-                console.error("Execution Error:", err);
-                lastError = err.toString();
-                addToTerminal("\n" + lastError + "\n", true);
+                // Restart worker for next run
+                initWorker();
 
-                setAvatarState('idle'); // Back to idle on error
-
-                // Show "Ask Socratis"
-                const askBtn = document.getElementById('ask-btn');
-                askBtn.style.display = 'flex'; // flex for valid css
-
-                // Scroll to button
-                const chatM = document.getElementById('mentor-chat');
-                chatM.scrollTop = chatM.scrollHeight;
-            } finally {
-                runBtn.disabled = false;
-                runBtn.innerHTML = originalBtnContent;
-
-                setTimeout(() => {
-                    if (typeof avatarAnim !== 'undefined' && !lastError) setAvatarState('idle');
-                }, 1500);
-            }
+                cleanupExecution();
+            }, 5000);
         }
 
         // -- ASK SOCRATIS --
@@ -554,7 +563,7 @@
             // 2. Loading Bubble
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'chat-bubble chat-bot text-dim';
-            loadingDiv.innerText = "Socratis is analyzing logic structure...";
+            loadingDiv.innerText = "Socratix is analyzing logic structure...";
             loadingDiv.id = "loading-bubble";
             mentorChat.insertBefore(loadingDiv, document.getElementById('ask-container'));
 
@@ -575,14 +584,47 @@
                 // 3. Bot Response Bubble
                 const botDiv = document.createElement('div');
                 botDiv.className = 'chat-bubble chat-bot';
-                botDiv.innerHTML = `<strong style="color: #4ec9b0">Socratis:</strong> ${data.hint}`;
+
+                let contentHTML = "";
+
+                // Concept Badge
+                if (data.concept) {
+                    contentHTML += `<div style="font-size: 0.75em; text-transform: uppercase; color: #888; margin-bottom: 4px; letter-spacing: 1px;">${data.concept}</div>`;
+                }
+
+                // Analogy (Italicized)
+                if (data.analogy) {
+                    contentHTML += `<p style="margin: 0 0 8px 0; color: #d4d4d4; font-style: italic;">"${data.analogy}"</p>`;
+                }
+
+                // Hint (Main Guiding Question)
+                if (data.hint) {
+                    contentHTML += `<p style="margin: 0; font-weight: 500; color: #4ec9b0;">${data.hint}</p>`;
+                }
+
+                botDiv.innerHTML = `<strong style="color: #4ec9b0; display:block; margin-bottom:5px;">Socratix:</strong> ${contentHTML}`;
                 mentorChat.insertBefore(botDiv, document.getElementById('ask-container'));
 
-                // 4. Highlight Line (Mock Logic for demo)
-                let lineNo = 1;
-                const match = errorMsg.match(/line (\d+)/);
-                if (match) {
-                    lineNo = parseInt(match[1]);
+                // 4. Highlight Line
+                let lineNo = null;
+
+                // Priority 1: LLM provided line number
+                if (data.line_no && data.line_no > 0) {
+                    lineNo = parseInt(data.line_no);
+                }
+                // Priority 2: Backend analysis (fallback)
+                else if (data.analysis && data.analysis.status === 'syntax_error' && data.analysis.line) {
+                    lineNo = data.analysis.line;
+                }
+                // Priority 3: Error message regex (last resort)
+                else {
+                    const match = errorMsg.match(/line (\d+)/i);
+                    if (match) {
+                        lineNo = parseInt(match[1]);
+                    }
+                }
+
+                if (lineNo) {
                     highlightLine(lineNo);
                 }
 

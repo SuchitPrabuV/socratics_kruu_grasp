@@ -13,6 +13,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import environ
 
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,9 +35,10 @@ environ.Env.read_env(BASE_DIR / '.env')
 SECRET_KEY = 'django-insecure-91zgmm)!edo3y)ejj9%s*%n281m=1-kpow1r0bnu3!dq+i76^t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.onrender.com', '.pythonanywhere.com'])
 
 
 # Application definition
@@ -124,6 +132,8 @@ STATIC_URL = 'static/'
 
 
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
-LLM_PROVIDER = env("LLM_PROVIDER", default="gemini")
+# Default to groq for deployment
+LLM_PROVIDER = env("LLM_PROVIDER", default="groq")
 OLLAMA_MODEL = env("OLLAMA_MODEL", default="llama3")
 OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://localhost:11434")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") or env("GROQ_API_KEY", default="")

@@ -1,3 +1,8 @@
-django
+django>=5.0
 django-environ
+python-dotenv
+groq
 google-genai
+ollama
+urllib3
+gunicorn

@@ -1,0 +1,12 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Body/Head -->
+  <rect x="40" y="40" width="120" height="120" rx="20" fill="#2d2d2d" stroke="#4ec9b0" stroke-width="4"/>
+  <!-- Antennas -->
+  <line x1="100" y1="40" x2="100" y2="20" stroke="#4ec9b0" stroke-width="4"/>
+  <circle cx="100" cy="15" r="5" fill="#4ec9b0"/>
+  <!-- Eyes -->
+  <circle cx="75" cy="90" r="12" fill="#4ec9b0"/>
+  <circle cx="125" cy="90" r="12" fill="#4ec9b0"/>
+  <!-- Mouth (Smile) -->
+  <path d="M 70 120 Q 100 140 130 120" stroke="#4ec9b0" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>

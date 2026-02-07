@@ -40,9 +40,11 @@ def get_hint(request):
             )
 
             return JsonResponse({
-                'hint': hint_content,
+                'hint': llm_Response.get('hint', ''),
+                'analogy': llm_Response.get('analogy', ''),
                 'analysis': analysis,
-                'concept': concept
+                'concept': concept,
+                'line_no': llm_Response.get('line_no', 0)
             })
 
         except Exception as e:
