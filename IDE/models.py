@@ -17,10 +17,3 @@ class Interaction(models.Model):
     def __str__(self):
         return f"Interaction at {self.timestamp}"
 
-class ConceptMastery(models.Model):
-    concept = models.CharField(max_length=100)
-    score = models.IntegerField(default=0)
-    last_updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.concept}: {self.score}"

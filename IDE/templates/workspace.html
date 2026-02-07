@@ -244,65 +244,7 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        /* --- Gamification --- */
-        #progress-container {
-            padding: 15px 20px;
-            background: #252526;
-            border-bottom: 1px solid var(--border-color);
-            position: relative;
-        }
 
-        #progress-bar-bg {
-            width: 100%;
-            height: 10px;
-            background-color: #1e1e1e;
-            border-radius: 5px;
-            overflow: hidden;
-            border: 1px solid #333;
-            cursor: pointer;
-        }
-
-        #progress-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ffd700, #ff8c00);
-            /* XP Gold Color */
-            transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
-        }
-
-        #score-label {
-            font-size: 0.85em;
-            font-weight: 600;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            color: #ffd700;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Tooltip style for Breakdown */
-        #xp-tooltip {
-            position: absolute;
-            top: 45px;
-            left: 20px;
-            right: 20px;
-            background-color: #1e1e1e;
-            border: 1px solid #444;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            color: #ccc;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            z-index: 10;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        #progress-container:hover #xp-tooltip {
-            opacity: 1;
-        }
     </style>
 </head>
 
@@ -364,21 +306,7 @@
                 <div id="socratis-avatar"></div>
             </div>
 
-            <!-- Granular Mastery Progress -->
-            <div id="progress-container">
-                <span id="score-label">
-                    <span>Logic Mastery (Level <span id="lvl-val">1</span>)</span>
-                    <span id="score-val">0 XP</span>
-                </span>
-                <div id="progress-bar-bg">
-                    <div id="progress-bar-fill"></div>
-                </div>
-                <!-- Breakdown Tooltip -->
-                <div id="xp-tooltip">
-                    Breakdown:<br>
-                    <span id="xp-breakdown">Play to unlock metrics...</span>
-                </div>
-            </div>
+
 
             <div class="chat-content" id="mentor-chat">
                 <div class="chat-bubble chat-bot">
@@ -407,7 +335,7 @@
         var editor;
         var pyodide;
         var lastError = "";
-        var currentScore = 0;
+
         var decorations = [];
         var avatarAnim;
 
@@ -582,7 +510,7 @@
                 await pyodide.runPythonAsync(userCode);
                 // Success!
                 setAvatarState('celebration');
-                recordSuccess(userCode);
+
 
             } catch (err) {
                 console.error("Execution Error:", err);
@@ -689,53 +617,7 @@
             }
         }
 
-        async function recordSuccess(successfulCode) {
-            try {
-                const response = await fetch('/api/success/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: successfulCode }) // Sending CODE now, not just tags
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    updateScoreDisplay(data.new_score, data.breakdown, data.gained);
-                }
-            } catch (err) { console.error(err); }
-        }
 
-        function updateScoreDisplay(newScore, breakdown, gained) {
-            // Update Number
-            if (newScore !== undefined) currentScore = newScore;
-            document.getElementById('score-val').innerText = `${currentScore} XP`;
-
-            // Update Bar
-            // Level Cap calc: Level = Score / 500 roughly
-            const level = Math.floor(currentScore / 500) + 1;
-            document.getElementById('lvl-val').innerText = level;
-
-            const progressInLevel = currentScore % 500;
-            const percentage = (progressInLevel / 500) * 100;
-            document.getElementById('progress-bar-fill').style.width = percentage + "%";
-
-            // Update Breakdown Tooltip
-            if (breakdown) {
-                let html = "<strong>Mastery Breakdown:</strong><br>";
-                breakdown.forEach(item => {
-                    html += `• ${item.concept}: Lvl ${Math.floor(item.score / 100)} (${item.score} XP)<br>`;
-                });
-                document.getElementById('xp-breakdown').innerHTML = html;
-            }
-
-            if (gained) {
-                // Show sticky notification log if we had one, for now console
-                console.log("Gained XP:", gained);
-            }
-        }
-
-        // Initial Fetch
-        fetch('/api/progress/').then(r => r.json()).then(data => {
-            updateScoreDisplay(data.total_score, data.mastery);
-        });
 
     </script>
 </body>
