@@ -282,6 +282,7 @@
 
 <body>
     <div class="container">
+        <!-- Fixed Nav moved to Header -->
         <!-- CODE PANEL -->
         <div class="code-panel">
             <div class="header">
@@ -331,13 +332,40 @@
                     </svg>
                     Socratix Mentor
                 </span>
-                <!-- Score Display -->
-                <div id="score-display" style="display: flex; align-items: center; gap: 8px; position: relative;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffd700" stroke="none">
-                        <polygon
-                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                    <span id="score-value" style="color: #ffd700; font-weight: 600; font-size: 1.1em;">0</span>
+
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <!-- Score Display -->
+                    <div id="score-display" style="display: flex; align-items: center; gap: 8px; position: relative;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffd700" stroke="none">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <span id="score-value" style="color: #ffd700; font-weight: 600; font-size: 1.1em;">0</span>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                    <div style="height: 16px; width: 1px; background-color: #555;"></div>
+
+                    <a href="{% url 'dashboard' %}" title="Dashboard"
+                        style="color:#38bdf8; display:flex; align-items:center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </a>
+                    <a href="{% url 'logout' %}" title="Logout"
+                        style="color:#f87171; display:flex; align-items:center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
 
@@ -380,7 +408,11 @@
         var avatarAnim;
 
         // Score tracking variables
+        {% if user.is_authenticated %}
+        var sessionId = '{{ user.username }}';
+        {% else %}
         var sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        {% endif %}
         var currentScore = 0;
         var hadErrorBeforeRun = false;
 
@@ -498,11 +530,21 @@
                         mentorChat.scrollTop = mentorChat.scrollHeight;
 
                         // NEW: Record success and update score
+
                         if (hadErrorBeforeRun) {
+                            // Try to get the last concept from the last Socratix hint
+                            let lastConcept = null;
+                            const mentorChat = document.getElementById('mentor-chat');
+                            const botBubbles = mentorChat.querySelectorAll('.chat-bot');
+                            if (botBubbles.length > 0) {
+                                const lastBot = botBubbles[botBubbles.length - 1];
+                                const badge = lastBot.querySelector('div');
+                                if (badge) lastConcept = badge.textContent.trim();
+                            }
                             fetch('/api/score/update/', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ session_id: sessionId })
+                                body: JSON.stringify({ session_id: sessionId, concept: lastConcept })
                             })
                                 .then(response => response.json())
                                 .then(data => {
@@ -510,9 +552,25 @@
                                         // Update score display
                                         currentScore = data.new_score;
                                         document.getElementById('score-value').innerText = currentScore;
-
                                         // Show +10 popup
                                         showScorePopup(data.score_gained);
+                                        // Show mastery appreciation if new
+                                        if (data.mastery_given && data.concept) {
+                                            const botDiv = document.createElement('div');
+                                            botDiv.className = 'chat-bubble chat-bot';
+                                            botDiv.style.borderLeftColor = '#89ca78';
+                                            botDiv.innerHTML = `<strong style="color:#89ca78">Socratix:</strong> <span>Congratulations! You have mastered <b>${data.concept}</b>!</span>`;
+                                            mentorChat.insertBefore(botDiv, document.getElementById('ask-container'));
+                                            mentorChat.scrollTop = mentorChat.scrollHeight;
+                                        } else if (data.concept && data.resolved_count && !data.has_mastery) {
+                                            // Show Progress
+                                            const botDiv = document.createElement('div');
+                                            botDiv.className = 'chat-bubble chat-bot';
+                                            botDiv.style.borderLeftColor = '#ffd700'; // Gold for progress
+                                            botDiv.innerHTML = `<strong style="color:#ffd700">Socratix:</strong> <span>Good job! Progress for <b>${data.concept}</b>: ${data.resolved_count}/3</span>`;
+                                            mentorChat.insertBefore(botDiv, document.getElementById('ask-container'));
+                                            mentorChat.scrollTop = mentorChat.scrollHeight;
+                                        }
                                     }
                                 })
                                 .catch(err => console.error('Error updating score:', err));

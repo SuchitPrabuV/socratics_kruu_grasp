@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="dashboard-layout animate-fade-in">
+    <div class="nav-bar glass-panel" style="padding: 20px;">
+        <div>
+            <h1 class="site-title" style="font-size: 1.5rem; margin-bottom: 0;">Socratix Dashboard</h1>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <!-- Score Display -->
+            <div
+                style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffd700" stroke="none">
+                    <polygon
+                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+                <span style="color: #ffd700; font-weight: 600; font-size: 1.1em;">{{ total_score }}</span>
+            </div>
+            <span style="color: var(--text-secondary);">Welcome, <strong style="color: var(--text-primary);">{{
+                    user.username }}</strong></span>
+            <a href="{% url 'logout' %}" style="color: var(--error-color);">Logout</a>
+            <a href="{% url 'workspace' %}"><button class="btn-primary" style="padding: 8px 16px;">Open
+                    Workspace</button></a>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+        <!-- Left Column: Code History -->
+        <div>
+            <h2 style="margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Recent
+                Code</h2>
+
+            {% for interaction in interactions %}
+            <div class="code-card">
+                <div class="card-header">
+                    <span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="margin-right: 5px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        {{ interaction.timestamp|timesince }} ago
+                    </span>
+                    {% if interaction.was_resolved %}
+                    <span class="badge"
+                        style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">Resolved</span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--error-color);">Review
+                        Needed</span>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <div class="code-block" style="max-height: 150px; overflow-y: auto;">
+                        <pre><code>{{ interaction.user_code }}</code></pre>
+                    </div>
+                </div>
+
+                {% if interaction.error_log %}
+                <div
+                    style="background: rgba(239, 68, 68, 0.05); padding: 10px; border-radius: 6px; font-size: 0.85rem; color: #fca5a5; font-family: monospace;">
+                    <strong>Error:</strong> {{ interaction.error_log|truncatechars:80 }}
+                </div>
+                {% endif %}
+
+                {% if interaction.concept %}
+                <div style="margin-top: 10px; text-align: right;">
+                    <span class="badge"
+                        style="border: 1px solid var(--accent-color); color: var(--accent-color);">Concept: {{
+                        interaction.concept }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                <p>No coding sessions recorded yet.</p>
+                <a href="{% url 'workspace' %}" style="display: inline-block; margin-top: 10px;">Start Coding
+                    &#8594;</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Right Column: Achievements -->
+        <div>
+            <h2 style="margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Mastery
+            </h2>
+
+            <div class="glass-panel" style="padding: 20px;">
+                {% if achievements %}
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    {% for achievement in achievements %}
+                    <div class="achievement-card"
+                        style="width: 100%; margin-bottom: 10px; display: flex; align-items: center; gap: 15px;">
+                        <div
+                            style="background: rgba(16, 185, 129, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399"
+                                stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #fff;">{{ achievement.concept }}</h4>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">{{
+                                achievement.achieved_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 30px; color: var(--text-secondary);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+                        style="opacity: 0.5; margin-bottom: 10px;">
+                        <circle cx="12" cy="8" r="7"></circle>
+                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                    </svg>
+                    <p>Resolve errors to earn mastery badges!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

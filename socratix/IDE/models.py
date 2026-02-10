@@ -1,4 +1,6 @@
+
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Problem(models.Model):
@@ -24,13 +26,28 @@ class Interaction(models.Model):
     user_code = models.TextField()
     error_log = models.TextField(blank=True, null=True)
     ai_hint = models.TextField(blank=True, null=True)
+    concept = models.CharField(max_length=100, blank=True, null=True)  # Store concept for mastery tracking
     timestamp = models.DateTimeField(auto_now_add=True)
     
     # New fields for score tracking
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True) # Link to authenticated user
     session_id = models.CharField(max_length=100, blank=True, null=True)
     was_resolved = models.BooleanField(default=False)
     resolved_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"Interaction at {self.timestamp}"
+
+
+# Track which user has mastered which concept
+class ConceptMastery(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    concept = models.CharField(max_length=100)
+    achieved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "concept")
+
+    def __str__(self):
+        return f"{self.user.username} mastered {self.concept}"
 
